@@ -1,5 +1,5 @@
 #!/bin/bash
-
+exit 0
 STOPTIMEOUT=10
 FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
 
@@ -76,7 +76,7 @@ function stop() {
 
 function update() {
     stop
-    ./.openshift/action_hooks/build
+    #./.openshift/action_hooks/build
 }
 
 function restart() {

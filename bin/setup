@@ -1,5 +1,5 @@
 #!/bin/bash -e
-
+exit 0
 #case "$1" in
 #  -v|--version)
 #    version="$2"
