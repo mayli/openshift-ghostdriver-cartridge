@@ -1,6 +1,6 @@
-Name: nginx
-Cartridge-Short-Name: NGINX
-Display-Name: Nginx
+Name: ghostdrive
+Cartridge-Short-Name: GHOSTDRIVE
+Display-Name: Ghostdrive
 Version: "1.4.2"
 Versions: ["1.4.2"]
 Source-Url: https://github.com/gsterjov/openshift-nginx-cart.git
