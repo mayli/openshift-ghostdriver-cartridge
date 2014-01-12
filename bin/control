@@ -32,7 +32,7 @@ function start() {
             #erb "$OPENSHIFT_REPO_DIR/phantomjs.conf.erb" > "$OPENSHIFT_REPO_DIR/phantomjs.conf"
 
             # phantomjs will always use the prefix defined at compile time unless an absolute path to the conf file is given
-            nohup "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" "ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" --ip=$OPENSHIFT_GHOSTDRIVER_IP --ip=$OPENSHIFT_GHOSTDRIVER_PORT >> $logf 2>&1 &
+            nohup "$OPENSHIFT_GHOSTDRIVE_DIR/phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" "$OPENSHIFT_GHOSTDRIVE_DIR/ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" --ip=$OPENSHIFT_GHOSTDRIVER_IP --ip=$OPENSHIFT_GHOSTDRIVER_PORT >> $logf 2>&1 &
 
             ret=$?
             npid=$!
