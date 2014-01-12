@@ -1,26 +1,28 @@
-Name: ghostdriver
-Cartridge-Short-Name: GHOSTDRIVER
-Display-Name: Ghostdriver
-Version: "1.1.0"
-Versions: ["1.1.0"]
-Source-Url: https://github.com/mayli/openshift-ghostdriver-cartridge.git
-Website: https://github.com/mayli/openshift-ghostdriver-cartridge
+Name: nginx
+Cartridge-Short-Name: NGINX
+Display-Name: Nginx
+Version: "1.4.2"
+Versions: ["1.4.2"]
+Source-Url: https://github.com/gsterjov/openshift-nginx-cart.git
+Website: https://github.com/gsterjov/openshift-nginx-cart
 Cartridge-Version: 0.0.1
-Cartridge-Vendor: mayli
+Cartridge-Vendor: gsterjov
 Categories:
   - service
-  - phantomjs
-  - ghostdriver
+  - nginx
   - web_framework
 Provides:
-  - ghostdriver-1.1.0
-  - "ghostdriver"
-  - "ghostdriver (version) = 1.1.0"
-  - "ghostdriver (version) = 1"
+  - nginx-1.4
+  - "nginx"
+  - "nginx (version) = 1.4.2"
+  - "nginx (version) = 1"
 Scaling:
   Min: 1
   Max: -1
 Cart-Data:
+  - Key: OPENSHIFT_NGINX_LOG_DIR
+    Type: environment
+    Description: "Directory to store application log files."
   - Key: OPENSHIFT_TMP_DIR
     Type: environment
     Description: "Directory to store application temporary files."
@@ -48,6 +50,21 @@ Cart-Data:
   - Key: OPENSHIFT_GEAR_UUID
     Type: environment
     Description: "Unique ID which identified the gear. This value changes between gears."
+Publishes:
+  get-doc-root:
+    Type: "FILESYSTEM:doc-root"
+  publish-http-url:
+    Type: "NET_TCP:httpd-proxy-info"
+  publish-gear-endpoint:
+    Type: "NET_TCP:gear-endpoint-info"
+Subscribes:
+  set-db-connection-info:
+    Type: "ENV:NET_TCP:db:connection-info"
+    Required: false
+Group-Overrides:
+  - components:
+    - nginx-1.4
+    - web_proxy
 Endpoints:
   - Private-IP-Name:   IP
     Private-Port-Name: PORT
