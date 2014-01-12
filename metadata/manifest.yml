@@ -1,0 +1,41 @@
+Name: ghostdriver
+Cartridge-Short-Name: GHOSTDRIVER
+Display-Name: Ghostdriver
+Version: "1.1.0"
+Versions: ["1.1.0"]
+Source-Url: https://github.com/mayli/openshift-ghostdriver-cartridge.git
+Website: https://github.com/mayli/openshift-ghostdriver-cartridge
+Cartridge-Version: 0.0.1
+Cartridge-Vendor: mayli
+Categories:
+  - service
+  - phantomjs
+  - ghostdriver
+Provides:
+  - ghostdriver-1.1.0
+  - "ghostdriver"
+  - "ghostdriver (version) = 1.1.0"
+  - "ghostdriver (version) = 1"
+Scaling:
+  Min: 1
+  Max: -1
+Cart-Data:
+  - Key: OPENSHIFT_APP_NAME
+    Type: environment
+    Description: "Application name"
+  - Key: OPENSHIFT_DATA_DIR
+    Type: environment
+    Description: "Directory to store application data files. Preserved across git-pushes. Not shared across gears."
+Endpoints:
+  - Private-IP-Name:   IP
+    Private-Port-Name: PORT
+    Private-Port:      8080
+    Public-Port-Name:  PROXY_PORT
+    Mappings:
+      - Frontend:      ""
+        Backend:       ""
+        Options:       { websocket: true }
+      - Frontend:      "/health"
+        Backend:       ""
+        Options:       { health: true }
+Install-Build-Required: false

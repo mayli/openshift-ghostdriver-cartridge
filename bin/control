@@ -1,0 +1,131 @@
+#!/bin/bash
+
+STOPTIMEOUT=10
+FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
+
+function is_phantomjs_service_running() {
+    if [ -f pid/phantomjs.pid ]; then
+        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
+        if `ps --pid $phantomjs_pid 2>&1`; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+function status() {
+    if is_phantomjs_service_running; then
+        client_result "Ghostdriver is running"
+    else
+        client_result "Ghostdriver is not running"
+    fi
+}
+
+
+function start() {
+    logf="logs/phantomjs.log"
+    {
+        if [ -f "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" ]&&[ -f "ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" ]; then
+            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from phantomjs/$PHANTOMJS_VERSION/bin/phantomjs with ghostdriver/$GHOSTDRIVER_VERSION/src/main.js..."
+
+            #erb "$OPENSHIFT_REPO_DIR/nginx.conf.erb" > "$OPENSHIFT_REPO_DIR/nginx.conf"
+
+            # nginx will always use the prefix defined at compile time unless an absolute path to the conf file is given
+            nohup "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" "ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" --ip=$OPENSHIFT_GHOSTDRIVER_IP --port=$OPENSHIFT_GHOSTDRIVER_PORT >> $logf 2>&1 &
+
+            ret=$?
+            npid=$!
+            if [ $ret -eq 0 ]; then
+                echo "$npid" > "pid/phantomjs.pid"
+            else
+                echo "Application '$OPENSHIFT_APP_NAME' failed to start - $ret" 1>&2
+                exit $ret
+            fi
+        else
+            echo "WARN: Could not find the compiled application phantomjs/$PHANTOMJS_VERSION/bin/phantomjs or ghostdriver/$GHOSTDRIVER_VERSION/src/main.js, will not start"
+        fi
+    } >> $logf
+}
+
+function stop() {
+    if [ -f pid/phantomjs.pid ]; then
+        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
+    fi
+
+    if [ -n "$phantomjs_pid" ]; then
+        logf="logs/phantomjs.log"
+        echo "`date +"$FMT"`: Stopping application '$OPENSHIFT_APP_NAME' ..." >> $logf
+        /bin/kill $phantomjs_pid
+        ret=$?
+        if [ $ret -eq 0 ]; then
+            TIMEOUT="$STOPTIMEOUT"
+            while [ $TIMEOUT -gt 0 ] && is_phantomjs_service_running ; do
+                /bin/kill -0 "$phantomjs_pid" >/dev/null 2>&1 || break
+                sleep 1
+                let TIMEOUT=${TIMEOUT}-1
+            done
+        fi
+
+        echo "`date +"$FMT"`: Stopped phantomjs application '$OPENSHIFT_APP_NAME'" >> $logf
+        rm -f pid/phantomjs.pid
+    else
+        echo "Warning: Application '$OPENSHIFT_APP_NAME' server exists without a pid file.  Use force-stop to kill." 1>&2
+    fi
+}
+
+function update() {
+    stop
+    ./.openshift/action_hooks/build
+}
+
+function restart() {
+    stop
+    start
+}
+
+function build() {
+    echo
+}
+
+function post-deploy() {
+    echo
+}
+
+function pre-build() {
+    echo
+}
+
+function tidy() {
+  client_message "Emptying log dir: $OPENSHIFT_GHOSTDRIVER_LOG_DIR"
+  shopt -s dotglob
+  rm -rf logs/*
+  rm -rf tmp/*
+}
+
+#
+#  main():
+#
+
+# Ensure arguments.
+if ! [ $# -eq 1 ]; then
+    echo "Usage: $0 [start|restart|graceful|graceful-stop|stop|status]"
+    exit 1
+fi
+
+# Source utility functions.
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+# Handle commands.
+case "$1" in
+    start)               start       ;;
+    restart|graceful)    restart     ;;
+    graceful-stop|stop)  stop        ;;
+    status)              status      ;;
+    build)               build       ;;
+    pre-build)           pre-build   ;;
+    post-deploy)         post-deploy ;;
+    tidy)                tidy        ;;
+    update)              update      ;;
+    *) exit 0;
+esac
