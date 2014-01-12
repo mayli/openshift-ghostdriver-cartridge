@@ -26,13 +26,13 @@ function status() {
 function start() {
     logf="logs/phantomjs.log"
     {
-        if [ -f "versions/$PHANTOMJS_VERSION/bin/phantomjs" ]; then
-            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from versions/$PHANTOMJS_VERSION/bin/phantomjs..."
+        if [ -f "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" ]; then
+            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from phantomjs/$PHANTOMJS_VERSION/bin/phantomjs..."
 
-            erb "$OPENSHIFT_REPO_DIR/phantomjs.conf.erb" > "$OPENSHIFT_REPO_DIR/phantomjs.conf"
+            #erb "$OPENSHIFT_REPO_DIR/phantomjs.conf.erb" > "$OPENSHIFT_REPO_DIR/phantomjs.conf"
 
             # phantomjs will always use the prefix defined at compile time unless an absolute path to the conf file is given
-            nohup "versions/$PHANTOMJS_VERSION/bin/phantomjs" -c "$OPENSHIFT_NGINX_DIR/conf/phantomjs.conf" >> $logf 2>&1 &
+            nohup "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" "ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" --ip=$OPENSHIFT_GHOSTDRIVER_IP --ip=$OPENSHIFT_GHOSTDRIVER_PORT >> $logf 2>&1 &
 
             ret=$?
             npid=$!
@@ -43,7 +43,7 @@ function start() {
                 exit $ret
             fi
         else
-            echo "WARN: Could not find the compiled application versions/$phantomjs_VERSION/bin/phantomjs, will not start"
+            echo "WARN: Could not find the compiled application phantomjs/$PHANTOMJS_VERSION/bin/phantomjs or ghostdriver/$GHOSTDRIVER_VERSION/src/main.js, will not start"
         fi
     } >> $logf
 }
