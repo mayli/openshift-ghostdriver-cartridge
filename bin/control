@@ -5,7 +5,7 @@ FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
 
 function is_phantomjs_service_running() {
     if [ -f pid/phantomjs.pid ]; then
-        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
+        phantomjs_pid=$( cat $OPENSHIFT_GHOSTDRIVE_DIR/pid/phantomjs.pid 2> /dev/null )
         if `ps --pid $phantomjs_pid 2>&1`; then
             return 0
         fi
@@ -24,10 +24,10 @@ function status() {
 
 
 function start() {
-    logf="logs/phantomjs.log"
+    logf="$OPENSHIFT_GHOSTDRIVE_DIR/logs/phantomjs.log"
     {
-        if [ -f "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" ]; then
-            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from phantomjs/$PHANTOMJS_VERSION/bin/phantomjs..."
+        if [ -f "$OPENSHIFT_GHOSTDRIVE_DIR/phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" ]; then
+            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from $OPENSHIFT_GHOSTDRIVE_DIR/phantomjs/$PHANTOMJS_VERSION/bin/phantomjs..."
 
             #erb "$OPENSHIFT_REPO_DIR/phantomjs.conf.erb" > "$OPENSHIFT_REPO_DIR/phantomjs.conf"
 
@@ -37,24 +37,24 @@ function start() {
             ret=$?
             npid=$!
             if [ $ret -eq 0 ]; then
-                echo "$npid" > "pid/phantomjs.pid"
+                echo "$npid" > "$OPENSHIFT_GHOSTDRIVE_DIR/pid/phantomjs.pid"
             else
                 echo "Application '$OPENSHIFT_APP_NAME' failed to start - $ret" 1>&2
                 exit $ret
             fi
         else
-            echo "WARN: Could not find the compiled application phantomjs/$PHANTOMJS_VERSION/bin/phantomjs or ghostdriver/$GHOSTDRIVER_VERSION/src/main.js, will not start"
+            echo "WARN: Could not find the compiled application $OPENSHIFT_GHOSTDRIVE_DIR/phantomjs/$PHANTOMJS_VERSION/bin/phantomjs or ghostdriver/$GHOSTDRIVER_VERSION/src/main.js, will not start"
         fi
     } >> $logf
 }
 
 function stop() {
     if [ -f pid/phantomjs.pid ]; then
-        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
+        phantomjs_pid=$( cat $OPENSHIFT_GHOSTDRIVE_DIR/pid/phantomjs.pid 2> /dev/null )
     fi
 
     if [ -n "$phantomjs_pid" ]; then
-        logf="logs/phantomjs.log"
+        logf="$OPENSHIFT_GHOSTDRIVE_DIR/logs/phantomjs.log"
         echo "`date +"$FMT"`: Stopping application '$OPENSHIFT_APP_NAME' ..." >> $logf
         /bin/kill $phantomjs_pid
         ret=$?
@@ -68,7 +68,7 @@ function stop() {
         fi
 
         echo "`date +"$FMT"`: Stopped phantomjs application '$OPENSHIFT_APP_NAME'" >> $logf
-        rm -f pid/phantomjs.pid
+        rm -f $OPENSHIFT_GHOSTDRIVE_DIR/pid/phantomjs.pid
     else
         echo "Warning: Application '$OPENSHIFT_APP_NAME' server exists without a pid file.  Use force-stop to kill." 1>&2
     fi
