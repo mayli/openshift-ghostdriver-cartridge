@@ -1,20 +1,20 @@
 #!/bin/bash -e
-exit 0
-#case "$1" in
-#  -v|--version)
-#    version="$2"
-#esac
+
+case "$1" in
+  -v|--version)
+    version="$2"
+esac
 
 # Parse arguments
-#source "lib/util"
-#parse_args $@
+source "lib/util"
+parse_args $@
 
 # Don't set -u until after the above arg parsing is complete
-#set -u
+set -u
 
-#echo "$version" > env/LOL_VERSION
+echo "$version" > env/NGINX_VERSION
 
 
 for dir in logs tmp pid; do
-        mkdir -p $dir
+	mkdir -p $dir
 done

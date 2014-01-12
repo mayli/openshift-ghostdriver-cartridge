@@ -1,12 +1,12 @@
 #!/bin/bash
-exit 0
+
 STOPTIMEOUT=10
 FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
 
-function is_phantomjs_service_running() {
-    if [ -f pid/phantomjs.pid ]; then
-        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
-        if `ps --pid $phantomjs_pid 2>&1`; then
+function is_nginx_service_running() {
+    if [ -f pid/nginx.pid ]; then
+        nginx_pid=$( cat pid/nginx.pid 2> /dev/null )
+        if `ps --pid $nginx_pid 2>&1`; then
             return 0
         fi
     fi
@@ -15,60 +15,60 @@ function is_phantomjs_service_running() {
 }
 
 function status() {
-    if is_phantomjs_service_running; then
-        client_result "Ghostdriver is running"
+    if is_nginx_service_running; then
+        client_result "Application is running"
     else
-        client_result "Ghostdriver is not running"
+        client_result "Application is not running"
     fi
 }
 
 
 function start() {
-    logf="logs/phantomjs.log"
+    logf="logs/nginx.log"
     {
-        if [ -f "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" ]&&[ -f "ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" ]; then
-            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from phantomjs/$PHANTOMJS_VERSION/bin/phantomjs with ghostdriver/$GHOSTDRIVER_VERSION/src/main.js..."
+        if [ -f "versions/$NGINX_VERSION/bin/nginx" ]; then
+            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from versions/$NGINX_VERSION/bin/nginx..."
 
-            #erb "$OPENSHIFT_REPO_DIR/nginx.conf.erb" > "$OPENSHIFT_REPO_DIR/nginx.conf"
+            erb "$OPENSHIFT_REPO_DIR/nginx.conf.erb" > "$OPENSHIFT_REPO_DIR/nginx.conf"
 
             # nginx will always use the prefix defined at compile time unless an absolute path to the conf file is given
-            nohup "phantomjs/$PHANTOMJS_VERSION/bin/phantomjs" "ghostdriver/$GHOSTDRIVER_VERSION/src/main.js" --ip=$OPENSHIFT_GHOSTDRIVER_IP --port=$OPENSHIFT_GHOSTDRIVER_PORT >> $logf 2>&1 &
+            nohup "versions/$NGINX_VERSION/bin/nginx" -c "$OPENSHIFT_NGINX_DIR/conf/nginx.conf" >> $logf 2>&1 &
 
             ret=$?
             npid=$!
             if [ $ret -eq 0 ]; then
-                echo "$npid" > "pid/phantomjs.pid"
+                echo "$npid" > "pid/nginx.pid"
             else
                 echo "Application '$OPENSHIFT_APP_NAME' failed to start - $ret" 1>&2
                 exit $ret
             fi
         else
-            echo "WARN: Could not find the compiled application phantomjs/$PHANTOMJS_VERSION/bin/phantomjs or ghostdriver/$GHOSTDRIVER_VERSION/src/main.js, will not start"
+            echo "WARN: Could not find the compiled application versions/$NGINX_VERSION/bin/nginx, will not start"
         fi
     } >> $logf
 }
 
 function stop() {
-    if [ -f pid/phantomjs.pid ]; then
-        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
+    if [ -f pid/nginx.pid ]; then
+        nginx_pid=$( cat pid/nginx.pid 2> /dev/null )
     fi
 
-    if [ -n "$phantomjs_pid" ]; then
-        logf="logs/phantomjs.log"
+    if [ -n "$nginx_pid" ]; then
+        logf="logs/nginx.log"
         echo "`date +"$FMT"`: Stopping application '$OPENSHIFT_APP_NAME' ..." >> $logf
-        /bin/kill $phantomjs_pid
+        /bin/kill $nginx_pid
         ret=$?
         if [ $ret -eq 0 ]; then
             TIMEOUT="$STOPTIMEOUT"
-            while [ $TIMEOUT -gt 0 ] && is_phantomjs_service_running ; do
-                /bin/kill -0 "$phantomjs_pid" >/dev/null 2>&1 || break
+            while [ $TIMEOUT -gt 0 ] && is_nginx_service_running ; do
+                /bin/kill -0 "$nginx_pid" >/dev/null 2>&1 || break
                 sleep 1
                 let TIMEOUT=${TIMEOUT}-1
             done
         fi
 
-        echo "`date +"$FMT"`: Stopped phantomjs application '$OPENSHIFT_APP_NAME'" >> $logf
-        rm -f pid/phantomjs.pid
+        echo "`date +"$FMT"`: Stopped Nginx application '$OPENSHIFT_APP_NAME'" >> $logf
+        rm -f pid/nginx.pid
     else
         echo "Warning: Application '$OPENSHIFT_APP_NAME' server exists without a pid file.  Use force-stop to kill." 1>&2
     fi
@@ -76,7 +76,7 @@ function stop() {
 
 function update() {
     stop
-    #./.openshift/action_hooks/build
+    ./.openshift/action_hooks/build
 }
 
 function restart() {
@@ -97,7 +97,7 @@ function pre-build() {
 }
 
 function tidy() {
-  client_message "Emptying log dir: $OPENSHIFT_GHOSTDRIVER_LOG_DIR"
+  client_message "Emptying log dir: $OPENSHIFT_NGINX_LOG_DIR"
   shopt -s dotglob
   rm -rf logs/*
   rm -rf tmp/*
@@ -129,3 +129,4 @@ case "$1" in
     update)              update      ;;
     *) exit 0;
 esac
+
