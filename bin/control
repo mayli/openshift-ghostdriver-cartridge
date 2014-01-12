@@ -3,10 +3,10 @@
 STOPTIMEOUT=10
 FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
 
-function is_nginx_service_running() {
-    if [ -f pid/nginx.pid ]; then
-        nginx_pid=$( cat pid/nginx.pid 2> /dev/null )
-        if `ps --pid $nginx_pid 2>&1`; then
+function is_phantomjs_service_running() {
+    if [ -f pid/phantomjs.pid ]; then
+        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
+        if `ps --pid $phantomjs_pid 2>&1`; then
             return 0
         fi
     fi
@@ -15,7 +15,7 @@ function is_nginx_service_running() {
 }
 
 function status() {
-    if is_nginx_service_running; then
+    if is_phantomjs_service_running; then
         client_result "Application is running"
     else
         client_result "Application is not running"
@@ -24,51 +24,51 @@ function status() {
 
 
 function start() {
-    logf="logs/nginx.log"
+    logf="logs/phantomjs.log"
     {
-        if [ -f "versions/$NGINX_VERSION/bin/nginx" ]; then
-            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from versions/$NGINX_VERSION/bin/nginx..."
+        if [ -f "versions/$PHANTOMJS_VERSION/bin/phantomjs" ]; then
+            echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' from versions/$PHANTOMJS_VERSION/bin/phantomjs..."
 
-            erb "$OPENSHIFT_REPO_DIR/nginx.conf.erb" > "$OPENSHIFT_REPO_DIR/nginx.conf"
+            erb "$OPENSHIFT_REPO_DIR/phantomjs.conf.erb" > "$OPENSHIFT_REPO_DIR/phantomjs.conf"
 
-            # nginx will always use the prefix defined at compile time unless an absolute path to the conf file is given
-            nohup "versions/$NGINX_VERSION/bin/nginx" -c "$OPENSHIFT_NGINX_DIR/conf/nginx.conf" >> $logf 2>&1 &
+            # phantomjs will always use the prefix defined at compile time unless an absolute path to the conf file is given
+            nohup "versions/$PHANTOMJS_VERSION/bin/phantomjs" -c "$OPENSHIFT_NGINX_DIR/conf/phantomjs.conf" >> $logf 2>&1 &
 
             ret=$?
             npid=$!
             if [ $ret -eq 0 ]; then
-                echo "$npid" > "pid/nginx.pid"
+                echo "$npid" > "pid/phantomjs.pid"
             else
                 echo "Application '$OPENSHIFT_APP_NAME' failed to start - $ret" 1>&2
                 exit $ret
             fi
         else
-            echo "WARN: Could not find the compiled application versions/$NGINX_VERSION/bin/nginx, will not start"
+            echo "WARN: Could not find the compiled application versions/$phantomjs_VERSION/bin/phantomjs, will not start"
         fi
     } >> $logf
 }
 
 function stop() {
-    if [ -f pid/nginx.pid ]; then
-        nginx_pid=$( cat pid/nginx.pid 2> /dev/null )
+    if [ -f pid/phantomjs.pid ]; then
+        phantomjs_pid=$( cat pid/phantomjs.pid 2> /dev/null )
     fi
 
-    if [ -n "$nginx_pid" ]; then
-        logf="logs/nginx.log"
+    if [ -n "$phantomjs_pid" ]; then
+        logf="logs/phantomjs.log"
         echo "`date +"$FMT"`: Stopping application '$OPENSHIFT_APP_NAME' ..." >> $logf
-        /bin/kill $nginx_pid
+        /bin/kill $phantomjs_pid
         ret=$?
         if [ $ret -eq 0 ]; then
             TIMEOUT="$STOPTIMEOUT"
-            while [ $TIMEOUT -gt 0 ] && is_nginx_service_running ; do
-                /bin/kill -0 "$nginx_pid" >/dev/null 2>&1 || break
+            while [ $TIMEOUT -gt 0 ] && is_phantomjs_service_running ; do
+                /bin/kill -0 "$phantomjs_pid" >/dev/null 2>&1 || break
                 sleep 1
                 let TIMEOUT=${TIMEOUT}-1
             done
         fi
 
-        echo "`date +"$FMT"`: Stopped Nginx application '$OPENSHIFT_APP_NAME'" >> $logf
-        rm -f pid/nginx.pid
+        echo "`date +"$FMT"`: Stopped phantomjs application '$OPENSHIFT_APP_NAME'" >> $logf
+        rm -f pid/phantomjs.pid
     else
         echo "Warning: Application '$OPENSHIFT_APP_NAME' server exists without a pid file.  Use force-stop to kill." 1>&2
     fi
@@ -97,7 +97,7 @@ function pre-build() {
 }
 
 function tidy() {
-  client_message "Emptying log dir: $OPENSHIFT_NGINX_LOG_DIR"
+  client_message "Emptying log dir: $OPENSHIFT_phantomjs_LOG_DIR"
   shopt -s dotglob
   rm -rf logs/*
   rm -rf tmp/*
